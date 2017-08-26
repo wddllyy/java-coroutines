@@ -18,8 +18,8 @@ public class Win32Context implements CoroutineContext {
     public final List<Win32Coroutine> coroutines = new LinkedList<>();
     public Object buffer;
     public Object ex;
-    public Stack<Fiber> stack = new Stack<>();
-    public Fiber current = mainFiber;
+    public Stack<Win32Coroutine> stack = new Stack<>();
+    public Win32Coroutine current = mainCoroutine;
 
     @Override
     public Coroutine create(CoroutineFunc func) {
@@ -32,15 +32,15 @@ public class Win32Context implements CoroutineContext {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         Win32Coroutine co = (Win32Coroutine)c;
         if(co.code == null) {
-            throw new IllegalStateException("Cannot resume main coroutine");
+            error("Cannot resume main coroutine");
         }
-        if(stack.contains(co.fiber)) {
-            throw new IllegalStateException("Cannot resume coroutine already running");
+        if(stack.contains(co)) {
+            error("Cannot resume coroutine already running");
         }
         buffer = arg;
         stack.push(current);
-        current = co.fiber;
-        current.switchTo();
+        current = co;
+        co.fiber.switchTo();
         if(ex != null) {
             Object o = ex;
             ex = null;
@@ -58,7 +58,7 @@ public class Win32Context implements CoroutineContext {
         }
         buffer = value;
         current = stack.pop();
-        current.switchTo();
+        current.fiber.switchTo();
         return buffer;
     }
 
@@ -72,23 +72,20 @@ public class Win32Context implements CoroutineContext {
 
     @Override
     public Coroutine current() {
-        for(Win32Coroutine c : coroutines) {
-            if(c.fiber == current) return c;
-        }
-        return mainCoroutine;
+        return current;
     }
 
     @Override
     public void destroy(Coroutine c) {
         Win32Coroutine co = (Win32Coroutine)c;
         if(co.code == null) {
-            throw new IllegalStateException("Cannot destroy main coroutine");
+            error("Cannot destroy main coroutine");
+        }
+        if(stack.contains(co) || current == co) {
+            error("Cannot delete a running coroutine");
         }
         if(!coroutines.contains(co)) {
             error("Coroutine belongs to a different context or was already deleted");
-        }
-        if(stack.contains(co.fiber)) {
-            error("Cannot delete a running coroutine");
         }
         coroutines.remove(co);
         co.fiber.delete();
@@ -97,6 +94,9 @@ public class Win32Context implements CoroutineContext {
 
     @Override
     public void destroy() {
+        if(!stack.isEmpty()) {
+            error("Cannot destroy context while coroutines are still running");
+        }
         stack.clear();
         coroutines.removeIf(c->{
             c.fiber.delete();
