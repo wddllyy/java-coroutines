@@ -7,6 +7,7 @@ public interface CoroutineContext {
     Object resume(Coroutine c, Object arg);
     Object yield(Object value);
     Object error(Object info);
+    Coroutine current();
     void destroy(Coroutine c);
     void destroy();
 

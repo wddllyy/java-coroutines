@@ -9,9 +9,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
+@SuppressWarnings("WeakerAccess")
 public class Win32Context implements CoroutineContext {
     public long stackSize = 1024*1024;
     public final Fiber mainFiber = Fiber.convertThreadToFiber();
+    public final Win32Coroutine mainCoroutine = new Win32Coroutine(mainFiber);
     public final Thread owner = Thread.currentThread();
     public final List<Win32Coroutine> coroutines = new LinkedList<>();
     public Object buffer;
@@ -29,10 +31,12 @@ public class Win32Context implements CoroutineContext {
     public Object resume(Coroutine c, Object arg) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         Win32Coroutine co = (Win32Coroutine)c;
+        if(co.code == null) {
+            throw new IllegalStateException("Cannot resume main coroutine");
+        }
         if(stack.contains(co.fiber)) {
             throw new IllegalStateException("Cannot resume coroutine already running");
         }
-        if(co.code == null) throw new AssertionError(); //just to avoid compiler removing the field
         buffer = arg;
         stack.push(current);
         current = co.fiber;
@@ -67,8 +71,19 @@ public class Win32Context implements CoroutineContext {
     }
 
     @Override
+    public Coroutine current() {
+        for(Win32Coroutine c : coroutines) {
+            if(c.fiber == current) return c;
+        }
+        return mainCoroutine;
+    }
+
+    @Override
     public void destroy(Coroutine c) {
         Win32Coroutine co = (Win32Coroutine)c;
+        if(co.code == null) {
+            throw new IllegalStateException("Cannot destroy main coroutine");
+        }
         if(!coroutines.contains(co)) {
             error("Coroutine belongs to a different context or was already deleted");
         }
