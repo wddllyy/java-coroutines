@@ -1,5 +1,9 @@
 package coroutine;
 
+/**
+ * Thrown on the first resume() call when a coroutine calls error()
+ */
+@SuppressWarnings("WeakerAccess")
 public class CoroutineExecutionError extends RuntimeException {
     public final Object info;
 

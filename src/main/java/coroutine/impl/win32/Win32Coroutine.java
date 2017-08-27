@@ -26,7 +26,9 @@ class Win32Coroutine implements Coroutine {
     }
 
     @Override
-    public void setData(Object data) {
+    public Object setData(Object data) {
+        Object o = this.data;
         this.data = data;
+        return o;
     }
 }
