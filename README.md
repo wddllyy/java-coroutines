@@ -2,7 +2,7 @@
 
 Do not, **ever**, throw exceptions, get stacktrace or use caller sensitive methods inside a coroutine, that **will crash the jvm**. This happens because the JVM was not designed to work with coroutines.
 
-#Usage
+# Usage
 
 First, you need a `CoroutineContext` object. To get one use the static method `getContext()`, which returns the appropriate implementation for the current machine.
 
@@ -35,6 +35,8 @@ Additionally, you can destroy individual coroutines to free their resources
 ```java
 ctx.destroy(c);
 ```
+
+Since throwing errors inside a coroutine makes the JVM crash, there's an `error(Object)` method on `CoroutineContext`. When it's called it will stop execution of all coroutines in the call stack until it's safe to throw an exception. Then, it'll throw a `CoroutineExecutionError`, giving it the object given to `error()`
 
 All `CoroutineContext` objects are meant to be used only in the thread that called `getContext()`, and *will* error if used on another thread.
 
