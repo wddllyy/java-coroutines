@@ -32,7 +32,7 @@ ctx.destroy();
 
 Additionally, you can destroy individual coroutines to free their resources
 
-````java
+```java
 ctx.destroy(c);
 ```
 
