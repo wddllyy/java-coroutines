@@ -7,29 +7,34 @@ Do not, **ever**, throw exceptions, get stacktrace or use caller sensitive metho
 First, you need a `CoroutineContext` object. To get one use the static method `getContext()`, which returns the appropriate implementation for the current machine.
 
 ```java
-CoroutineContext ctx = CoroutineContext.getContext();```
+CoroutineContext ctx = CoroutineContext.getContext();
+```
 
 Then, you need to use the `create(CoroutineFunc)` method to create a coroutine.
 
 ```java
 Coroutine c = ctx.create((context, arg)->{
     context.yield("Hello world!");
-});```
+});
+```
 
 To run it, use the `resume(Coroutine, Object)` method. It returns the value given to `yield(Object)`
 
 ```java
-System.out.println(ctx.resume(c, null));```
+System.out.println(ctx.resume(c, null));
+```
 
 After using the context, remember to destroy it
 
 ```java
-ctx.destroy();```
+ctx.destroy();
+```
 
 Additionally, you can destroy individual coroutines to free their resources
 
 ````java
-ctx.destroy(c);```
+ctx.destroy(c);
+```
 
 All `CoroutineContext` objects are meant to be used only in the thread that called `getContext()`, and *will* error if used on another thread.
 
@@ -54,4 +59,5 @@ Coroutine fibonacci = ctx.create((ctx1, arg)->{
 
 for(int i = 0; i < 10; i++) {
     System.out.print(ctx.resume(fibonacci, null) + " ");
-}```
+}
+```
