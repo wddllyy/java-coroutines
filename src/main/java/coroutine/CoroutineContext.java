@@ -69,6 +69,13 @@ public abstract class CoroutineContext {
     public abstract void destroy();
 
     /**
+     * Returns the number of coroutines alive
+     *
+     * @return how many coroutines have been created but not destroyed
+     */
+    public abstract int alive();
+
+    /**
      * Returns the CoroutineContext for the current thread.
      *
      * @return The context

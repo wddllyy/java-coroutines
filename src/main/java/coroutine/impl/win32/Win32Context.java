@@ -113,4 +113,9 @@ public class Win32Context extends CoroutineContext {
         }
         Fiber.convertFiberToThread();
     }
+
+    @Override
+    public int alive() {
+        return coroutines.size();
+    }
 }

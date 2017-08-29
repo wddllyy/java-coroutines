@@ -10,7 +10,7 @@ class FallbackCoroutine implements Coroutine {
     boolean stop = false;
 
     FallbackCoroutine(final FallbackContext ctx, final CoroutineFunc func, final Supplier buffer) {
-        thread = new Thread() {
+        thread = new Thread(ctx.group, null, ctx.group.getName() + "-Coroutine-" + ctx.nextId.getAndIncrement(), ctx.stackSize) {
             @Override
             public void run() {
                 try {
@@ -22,6 +22,8 @@ class FallbackCoroutine implements Coroutine {
                 }
             }
         };
+        thread.setDaemon(ctx.daemon);
+        thread.setPriority(ctx.threadPriority);
     }
 
     FallbackCoroutine() {

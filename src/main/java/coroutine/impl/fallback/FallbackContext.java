@@ -10,10 +10,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("WeakerAccess")
 public class FallbackContext extends CoroutineContext {
+    public final AtomicInteger nextId = new AtomicInteger(1);
     public final List<FallbackCoroutine> coroutines = new LinkedList<>();
+    public final ThreadGroup group = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Coroutines");
+    public int threadPriority = 5;
+    public boolean daemon = false;
+    public long stackSize = 1024*1024;
     public Object buffer;
     public Object ex;
     public Stack<FallbackCoroutine> stack = new Stack<>();
@@ -125,6 +131,11 @@ public class FallbackContext extends CoroutineContext {
                 c.notifyAll();
             }
         }
+    }
+
+    @Override
+    public int alive() {
+        return coroutines.size();
     }
 
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
