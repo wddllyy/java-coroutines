@@ -4,6 +4,7 @@ import coroutine.Coroutine;
 import coroutine.CoroutineContext;
 import coroutine.CoroutineExecutionError;
 import coroutine.CoroutineFunc;
+import coroutine.impl.Contexts;
 import coroutine.impl.Supplier;
 
 import java.util.LinkedList;
@@ -16,10 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FallbackContext extends CoroutineContext {
     public final AtomicInteger nextId = new AtomicInteger(1);
     public final List<FallbackCoroutine> coroutines = new LinkedList<>();
-    public final ThreadGroup group = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Coroutines");
+    public final ThreadGroup group = new ThreadGroup(Thread.currentThread().getThreadGroup(), Thread.currentThread().getName() + " Coroutines");
     public int threadPriority = 5;
     public boolean daemon = false;
-    public long stackSize = 1024*1024;
+    public long stackSize = 1024 * 1024;
     public Object buffer;
     public Object ex;
     public Stack<FallbackCoroutine> stack = new Stack<>();
@@ -40,29 +41,36 @@ public class FallbackContext extends CoroutineContext {
     @Override
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     public Object resume(Coroutine c, Object arg) {
-        FallbackCoroutine f = (FallbackCoroutine)c;
+        FallbackCoroutine f = (FallbackCoroutine) c;
         if(f.thread == null) {
             return error("Cannot resume main coroutine");
         }
         if(stack.contains(f)) {
             error("Cannot resume coroutine already running");
         }
-        FallbackCoroutine crt = current;
-        current = f;
-        buffer = arg;
-        stack.push(crt);
-        if(f.thread.getState() == Thread.State.NEW) {
-            f.thread.start();
-        } else {
-            synchronized(f) {
-                f.notifyAll();
+        FallbackCoroutine crt;
+        synchronized(this) {
+            crt = current;
+            current = f;
+            buffer = arg;
+            stack.push(crt);
+            if(f.thread.getState() == Thread.State.NEW) {
+                f.thread.start();
+            } else {
+                f.semaphore.release();
             }
         }
-        waitOn(crt);
+        //System.out.println(Thread.currentThread().getName() + " pre acquire " + crt);
+        try {
+            crt.semaphore.acquire();
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+        //System.out.println(Thread.currentThread().getName() + " post acquire " + crt);
         if(ex != null) {
             Object e = ex;
             ex = null;
-            throw e instanceof CoroutineExecutionError ? (CoroutineExecutionError)e : new CoroutineExecutionError(e);
+            throw e instanceof CoroutineExecutionError ? (CoroutineExecutionError) e : new CoroutineExecutionError(e);
         }
         return buffer;
     }
@@ -73,19 +81,23 @@ public class FallbackContext extends CoroutineContext {
         if(stack.isEmpty()) {
             error("Cannot yield from main coroutine");
         }
-        buffer = value;
-        FallbackCoroutine f = current;
-        current = stack.pop();
-        synchronized(current) {
-            current.notifyAll();
+        FallbackCoroutine f;
+        synchronized(this) {
+            buffer = value;
+            f = current;
+            (current = stack.pop()).semaphore.release();
         }
-        waitOn(f);
+        try {
+            f.semaphore.acquire();
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
         if(current.stop) throw new FallbackCoroutine.Stop();
         return buffer;
     }
 
     @Override
-    public Object error(Object info) {
+    public synchronized Object error(Object info) {
         if(stack.isEmpty()) throw new CoroutineExecutionError(info);
         ex = info;
         return yield(null);
@@ -99,7 +111,7 @@ public class FallbackContext extends CoroutineContext {
     @Override
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     public void destroy(Coroutine c) {
-        FallbackCoroutine co = (FallbackCoroutine)c;
+        FallbackCoroutine co = (FallbackCoroutine) c;
         if(co.thread == null) {
             error("Cannot destroy main coroutine");
         }
@@ -111,39 +123,31 @@ public class FallbackContext extends CoroutineContext {
         }
         coroutines.remove(co);
         co.stop = true;
-        synchronized(co) {
-            c.notifyAll();
-        }
+        co.semaphore.release();
     }
 
     @Override
-    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+    @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "SynchronizeOnNonFinalField"})
     public void destroy() {
         if(!stack.isEmpty()) {
             error("Cannot destroy context while coroutines are still running");
         }
+        Contexts.remove();
         stack.clear();
-        for(ListIterator<FallbackCoroutine> it = coroutines.listIterator(); it.hasNext();) {
+        current.stop = true;
+        stack.push(current);
+        current.semaphore.release();
+        for(ListIterator<FallbackCoroutine> it = coroutines.listIterator(); it.hasNext(); ) {
             FallbackCoroutine c = it.next();
             it.remove();
             c.stop = true;
-            synchronized(c) {
-                c.notifyAll();
-            }
+            stack.push(c);
+            c.semaphore.release();
         }
     }
 
     @Override
     public int alive() {
         return coroutines.size();
-    }
-
-    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    private static void waitOn(Object o) {
-        try {
-            synchronized(o) {
-                o.wait();
-            }
-        } catch(InterruptedException ignored) {}
     }
 }

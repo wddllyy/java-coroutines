@@ -7,9 +7,9 @@ import coroutine.impl.win32.Win32Context;
 
 @SuppressWarnings("WeakerAccess")
 public class Contexts {
-    public static final boolean USE_FALLBACK = !Platform.isWindows() || System.getProperty("coroutines.usefallback", null) != null;
+    public static final boolean USE_FALLBACK = !Platform.isWindows() || System.getProperty("coroutine.usefallback", null) != null;
 
-    private static final ThreadLocal<?  extends CoroutineContext> contexts = new ThreadLocal<CoroutineContext>() {
+    private static final ThreadLocal<CoroutineContext> contexts = new ThreadLocal<CoroutineContext>() {
         @Override
         protected CoroutineContext initialValue() {
             if(USE_FALLBACK) return new FallbackContext();
@@ -21,9 +21,21 @@ public class Contexts {
         return contexts.get();
     }
 
-    public static void destroy() {
-        CoroutineContext c = contexts.get();
+    public static void remove() {
         contexts.remove();
-        c.destroy();
+    }
+
+    public static void destroy() {
+        contexts.get().destroy();
+    }
+
+    public static CoroutineContext getFallback() {
+        CoroutineContext ctx = get();
+        if(ctx instanceof Win32Context) {
+            ctx.destroy();
+            ctx = new FallbackContext();
+            contexts.set(ctx);
+        }
+        return ctx;
     }
 }

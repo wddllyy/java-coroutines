@@ -2,10 +2,10 @@ package coroutine;
 
 /**
  * Represents a coroutine.
- *
+ * <p>
  * Coroutines are like threads, but not scheduled by the kernel and have full control of when they stop executing
  * and when a different one starts executing.
- *
+ * <p>
  * Always keep a reference to this object while the respective coroutine is executing, otherwise the JVM might crash.
  */
 public interface Coroutine {

@@ -17,16 +17,6 @@ class Fiber {
         this.ptr = ptr;
     }
 
-    void delete() {
-        if(!valid.get()) throw new IllegalStateException("Already deleted");
-        if(valid.compareAndSet(true, false)) natives().DeleteFiber(ptr);
-    }
-
-    void switchTo() {
-        if(!valid.get()) throw new IllegalStateException("Already deleted");
-        natives().SwitchToFiber(ptr);
-    }
-
     static Fiber createFiber(long stackSize, FiberStartRoutine routine) {
         if(stackSize < 4096) throw new IllegalArgumentException("stackSize < 4096");
         if(routine == null) throw new IllegalArgumentException("routine == null");
@@ -55,11 +45,24 @@ class Fiber {
         return natives;
     }
 
+    void delete() {
+        if(valid.compareAndSet(true, false)) natives().DeleteFiber(ptr);
+    }
+
+    void switchTo() {
+        if(!valid.get()) throw new IllegalStateException("Already deleted");
+        natives().SwitchToFiber(ptr);
+    }
+
     private interface FiberNatives extends StdCallLibrary {
         Pointer CreateFiber(long dwStackSize, FiberStartRoutine lpStartAddress, Pointer lpParameter);
+
         void DeleteFiber(Pointer lpFiber);
+
         Pointer ConvertThreadToFiber(Pointer lpParameter);
+
         void ConvertFiberToThread();
+
         void SwitchToFiber(Pointer lpFiber);
     }
 }

@@ -4,6 +4,7 @@ import coroutine.Coroutine;
 import coroutine.CoroutineContext;
 import coroutine.CoroutineExecutionError;
 import coroutine.CoroutineFunc;
+import coroutine.impl.Contexts;
 import coroutine.impl.Supplier;
 
 import java.util.LinkedList;
@@ -17,7 +18,7 @@ public class Win32Context extends CoroutineContext {
     public final Win32Coroutine mainCoroutine = new Win32Coroutine(mainFiber);
     public final Thread owner = Thread.currentThread();
     public final List<Win32Coroutine> coroutines = new LinkedList<>();
-    public long stackSize = 1024*1024;
+    public long stackSize = 1024 * 1024;
     public Object buffer;
     public Object ex;
     public Stack<Win32Coroutine> stack = new Stack<>();
@@ -39,7 +40,7 @@ public class Win32Context extends CoroutineContext {
     @Override
     public Object resume(Coroutine c, Object arg) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
-        Win32Coroutine co = (Win32Coroutine)c;
+        Win32Coroutine co = (Win32Coroutine) c;
         if(co.code == null) {
             error("Cannot resume main coroutine");
         }
@@ -85,7 +86,7 @@ public class Win32Context extends CoroutineContext {
 
     @Override
     public void destroy(Coroutine c) {
-        Win32Coroutine co = (Win32Coroutine)c;
+        Win32Coroutine co = (Win32Coroutine) c;
         if(co.code == null) {
             error("Cannot destroy main coroutine");
         }
@@ -105,8 +106,9 @@ public class Win32Context extends CoroutineContext {
         if(!stack.isEmpty()) {
             error("Cannot destroy context while coroutines are still running");
         }
+        Contexts.remove();
         stack.clear();
-        for(ListIterator<Win32Coroutine> it = coroutines.listIterator(); it.hasNext();) {
+        for(ListIterator<Win32Coroutine> it = coroutines.listIterator(); it.hasNext(); ) {
             Win32Coroutine c = it.next();
             it.remove();
             c.fiber.delete();
