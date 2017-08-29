@@ -1,9 +1,12 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '2.0.1'
+}
+
 group 'coroutine'
-version '1.0-SNAPSHOT'
+version '1.0'
 
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 
 repositories {
     mavenCentral()

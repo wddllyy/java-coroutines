@@ -4,18 +4,20 @@ import coroutine.Coroutine;
 import coroutine.CoroutineContext;
 import coroutine.CoroutineExecutionError;
 import coroutine.CoroutineFunc;
+import coroutine.impl.Supplier;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Stack;
 
 @SuppressWarnings("WeakerAccess")
-public class Win32Context implements CoroutineContext {
-    public long stackSize = 1024*1024;
+public class Win32Context extends CoroutineContext {
     public final Fiber mainFiber = Fiber.convertThreadToFiber();
     public final Win32Coroutine mainCoroutine = new Win32Coroutine(mainFiber);
     public final Thread owner = Thread.currentThread();
     public final List<Win32Coroutine> coroutines = new LinkedList<>();
+    public long stackSize = 1024*1024;
     public Object buffer;
     public Object ex;
     public Stack<Win32Coroutine> stack = new Stack<>();
@@ -24,7 +26,14 @@ public class Win32Context implements CoroutineContext {
     @Override
     public Coroutine create(CoroutineFunc func) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
-        return new Win32Coroutine(func, stackSize, this, ()->buffer);
+        Win32Coroutine c = new Win32Coroutine(func, stackSize, this, new Supplier() {
+            @Override
+            public Object get() {
+                return buffer;
+            }
+        });
+        coroutines.add(c);
+        return c;
     }
 
     @Override
@@ -44,7 +53,6 @@ public class Win32Context implements CoroutineContext {
         if(ex != null) {
             Object o = ex;
             ex = null;
-            if(stack.isEmpty()) throw new CoroutineExecutionError(o);
             return error(o);
         }
         return buffer;
@@ -63,10 +71,10 @@ public class Win32Context implements CoroutineContext {
     }
 
     @Override
-    public Object error(Object data) {
+    public Object error(Object info) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
-        if(stack.isEmpty()) throw new CoroutineExecutionError(data);
-        ex = data;
+        if(stack.isEmpty()) throw new CoroutineExecutionError(info);
+        ex = info;
         return yield(null);
     }
 
@@ -98,10 +106,11 @@ public class Win32Context implements CoroutineContext {
             error("Cannot destroy context while coroutines are still running");
         }
         stack.clear();
-        coroutines.removeIf(c->{
+        for(ListIterator<Win32Coroutine> it = coroutines.listIterator(); it.hasNext();) {
+            Win32Coroutine c = it.next();
+            it.remove();
             c.fiber.delete();
-            return true;
-        });
+        }
         Fiber.convertFiberToThread();
     }
 }

@@ -1,17 +1,22 @@
 package coroutine.impl.win32;
 
+import com.sun.jna.Pointer;
 import coroutine.Coroutine;
 import coroutine.CoroutineFunc;
-
-import java.util.function.Supplier;
+import coroutine.impl.Supplier;
 
 class Win32Coroutine implements Coroutine {
     final FiberStartRoutine code;
     final Fiber fiber;
     private Object data;
 
-    Win32Coroutine(CoroutineFunc func, long stackSize, Win32Context ctx, Supplier<Object> buffer) {
-        this.code = a->func.run(ctx, buffer.get());
+    Win32Coroutine(final CoroutineFunc func, long stackSize, final Win32Context ctx, final Supplier buffer) {
+        this.code = new FiberStartRoutine() {
+            @Override
+            public void run(Pointer arg) {
+                func.run(ctx, buffer.get());
+            }
+        };
         this.fiber = Fiber.createFiber(stackSize, this.code);
     }
 
