@@ -1,6 +1,6 @@
 # Warning
 
-**Never** throw exceptions, get stacktrace or use caller sensitive methods inside a coroutine, that **will crash the jvm**. This happens because the JVM was not designed to work with coroutines.
+**Never** throw exceptions, get stacktrace or use caller sensitive methods inside a win32 coroutine, that **will crash the jvm**. This happens because the JVM was not designed to work with coroutines. If code running inside a coroutine might throw, use the fallback context via `CoroutineContext.getFallbackContext()`.
 
 # Usage
 
@@ -13,7 +13,7 @@ CoroutineContext ctx = CoroutineContext.getContext();
 Then, you need to use the `create(CoroutineFunc)` method to create a coroutine.
 
 ```java
-Coroutine c = ctx.create((context, arg)->{
+Coroutine<Object, String> c = ctx.create((context, arg)->{
     context.yield("Hello world!");
 });
 ```
@@ -46,7 +46,7 @@ This example prints the 10 first number on the fibonacci sequence
 
 ```java
 CoroutineContext ctx = CoroutineContext.getContext();
-Coroutine fibonacci = ctx.create((ctx1, arg)->{
+Coroutine<Object, Integer> fibonacci = ctx.create((ctx1, arg)->{
     int a = 1, b = 1;
     ctx1.yield(a);
     ctx1.yield(b);
