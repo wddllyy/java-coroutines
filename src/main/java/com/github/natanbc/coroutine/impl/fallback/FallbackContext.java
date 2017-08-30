@@ -50,6 +50,10 @@ public class FallbackContext extends CoroutineContext {
             error("Cannot resume coroutine already running");
             throw new AssertionError();
         }
+        if(f.stop) {
+            error("Cannot resume dead coroutine");
+            throw new AssertionError();
+        }
         FallbackCoroutine crt;
         synchronized(this) {
             crt = current;

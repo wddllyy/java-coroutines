@@ -40,6 +40,9 @@ public abstract class CoroutineContext {
      *
      * @param func The code to execute
      * @return The coroutine object
+     *
+     * @param <A> Argument the coroutine receives when resumed
+     * @param <R> Value the coroutine yields
      */
     public abstract <A, R> Coroutine<A, R> create(CoroutineFunc<A, R> func);
 
@@ -51,6 +54,9 @@ public abstract class CoroutineContext {
      * @param arg Argument to give
      * @return The argument given to yield() by the coroutine
      * @throws CoroutineExecutionError on the main coroutine if a coroutine calls error()
+     *
+     * @param <A> Argument the coroutine receives when resumed
+     * @param <R> Value the coroutine yields
      */
     public abstract <A, R> R resume(Coroutine<A, R> c, A arg);
 
@@ -59,6 +65,9 @@ public abstract class CoroutineContext {
      *
      * @param value Value to return on {@link #resume(Coroutine, Object)}
      * @return Value given to a subsequent resume call for the current coroutine
+     *
+     * @param <A> Argument the coroutine receives when resumed
+     * @param <R> Value the coroutine yields
      */
     public abstract <A, R> A yield(R value);
 
@@ -68,6 +77,8 @@ public abstract class CoroutineContext {
      *
      * @param info Info to give the {@link CoroutineExecutionError} thrown
      * @return Value given to a subsequent resume call for the current coroutine
+     *
+     * @param <A> Argument the coroutine receives when resumed
      */
     public abstract <A> A error(Object info);
 
@@ -75,6 +86,9 @@ public abstract class CoroutineContext {
      * Returns the current executing {@link Coroutine}
      *
      * @return The current coroutine
+     *
+     * @param <A> Argument the coroutine receives when resumed
+     * @param <R> Value the coroutine yields
      */
     public abstract <A, R> Coroutine<A, R> current();
 
@@ -83,6 +97,9 @@ public abstract class CoroutineContext {
      *
      * @param c The coroutine to destroy
      * @throws IllegalStateException if the given coroutine is executing
+     *
+     * @param <A> Argument the coroutine receives when resumed
+     * @param <R> Value the coroutine yields
      */
     public abstract <A, R> void destroy(Coroutine<A, R> c);
 

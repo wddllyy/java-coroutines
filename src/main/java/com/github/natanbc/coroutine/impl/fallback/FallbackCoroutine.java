@@ -23,6 +23,7 @@ class FallbackCoroutine extends Coroutine {
                 } catch(Throwable t) {
                     ctx.error(t);
                 }
+                stop = true;
                 ctx.buffer = null;
                 (ctx.current = ctx.stack.pop()).semaphore.release();
             }
