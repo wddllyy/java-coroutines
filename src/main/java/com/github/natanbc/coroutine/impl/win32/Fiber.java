@@ -1,4 +1,4 @@
-package coroutine.impl.win32;
+package com.github.natanbc.coroutine.impl.win32;
 
 import com.sun.jna.Native;
 import com.sun.jna.Platform;

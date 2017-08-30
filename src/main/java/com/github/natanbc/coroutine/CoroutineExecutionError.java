@@ -1,7 +1,7 @@
-package coroutine;
+package com.github.natanbc.coroutine;
 
 /**
- * Thrown on the first resume() call when a coroutine calls error()
+ * Thrown when a coroutine calls {@link CoroutineContext#error(Object)}
  */
 @SuppressWarnings("WeakerAccess")
 public class CoroutineExecutionError extends RuntimeException {

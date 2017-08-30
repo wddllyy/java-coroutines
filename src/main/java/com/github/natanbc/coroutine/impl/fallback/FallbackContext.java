@@ -1,11 +1,11 @@
-package coroutine.impl.fallback;
+package com.github.natanbc.coroutine.impl.fallback;
 
-import coroutine.Coroutine;
-import coroutine.CoroutineContext;
-import coroutine.CoroutineExecutionError;
-import coroutine.CoroutineFunc;
-import coroutine.impl.Contexts;
-import coroutine.impl.Supplier;
+import com.github.natanbc.coroutine.Coroutine;
+import com.github.natanbc.coroutine.CoroutineContext;
+import com.github.natanbc.coroutine.CoroutineFunc;
+import com.github.natanbc.coroutine.impl.Contexts;
+import com.github.natanbc.coroutine.impl.Supplier;
+import com.github.natanbc.coroutine.CoroutineExecutionError;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.ListIterator;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"unchecked", "WeakerAccess"})
 public class FallbackContext extends CoroutineContext {
     public final AtomicInteger nextId = new AtomicInteger(1);
     public final List<FallbackCoroutine> coroutines = new LinkedList<>();
@@ -27,7 +27,7 @@ public class FallbackContext extends CoroutineContext {
     public FallbackCoroutine current = new FallbackCoroutine();
 
     @Override
-    public Coroutine create(CoroutineFunc func) {
+    public <A, R> Coroutine<A, R> create(CoroutineFunc<A, R> func) {
         FallbackCoroutine f = new FallbackCoroutine(this, func, new Supplier() {
             @Override
             public Object get() {
@@ -40,13 +40,15 @@ public class FallbackContext extends CoroutineContext {
 
     @Override
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public Object resume(Coroutine c, Object arg) {
+    public <A, R> R resume(Coroutine<A, R> c, A arg) {
         FallbackCoroutine f = (FallbackCoroutine) c;
         if(f.thread == null) {
-            return error("Cannot resume main coroutine");
+            error("Cannot resume main coroutine");
+            throw new AssertionError();
         }
         if(stack.contains(f)) {
             error("Cannot resume coroutine already running");
+            throw new AssertionError();
         }
         FallbackCoroutine crt;
         synchronized(this) {
@@ -60,24 +62,22 @@ public class FallbackContext extends CoroutineContext {
                 f.semaphore.release();
             }
         }
-        //System.out.println(Thread.currentThread().getName() + " pre acquire " + crt);
         try {
             crt.semaphore.acquire();
         } catch(InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
-        //System.out.println(Thread.currentThread().getName() + " post acquire " + crt);
         if(ex != null) {
             Object e = ex;
             ex = null;
             throw e instanceof CoroutineExecutionError ? (CoroutineExecutionError) e : new CoroutineExecutionError(e);
         }
-        return buffer;
+        return (R)buffer;
     }
 
     @Override
     @SuppressWarnings("SynchronizeOnNonFinalField")
-    public Object yield(Object value) {
+    public <A, R> A yield(R value) {
         if(stack.isEmpty()) {
             error("Cannot yield from main coroutine");
         }
@@ -90,14 +90,14 @@ public class FallbackContext extends CoroutineContext {
         try {
             f.semaphore.acquire();
         } catch(InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         if(current.stop) throw new FallbackCoroutine.Stop();
-        return buffer;
+        return (A)buffer;
     }
 
     @Override
-    public synchronized Object error(Object info) {
+    public <A> A error(Object info) {
         if(stack.isEmpty()) throw new CoroutineExecutionError(info);
         ex = info;
         return yield(null);

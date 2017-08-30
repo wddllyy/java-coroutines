@@ -1,9 +1,9 @@
-package coroutine.impl;
+package com.github.natanbc.coroutine.impl;
 
+import com.github.natanbc.coroutine.CoroutineContext;
 import com.sun.jna.Platform;
-import coroutine.CoroutineContext;
-import coroutine.impl.fallback.FallbackContext;
-import coroutine.impl.win32.Win32Context;
+import com.github.natanbc.coroutine.impl.fallback.FallbackContext;
+import com.github.natanbc.coroutine.impl.win32.Win32Context;
 
 @SuppressWarnings("WeakerAccess")
 public class Contexts {

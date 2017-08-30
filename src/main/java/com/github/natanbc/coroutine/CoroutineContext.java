@@ -1,12 +1,13 @@
-package coroutine;
+package com.github.natanbc.coroutine;
 
-import coroutine.impl.Contexts;
+import com.github.natanbc.coroutine.impl.Contexts;
 
 /**
  * Holds the context and state of coroutines
  * <p>
  * Throws when used in a different thread than the one that created it
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public abstract class CoroutineContext {
     /**
      * Returns the CoroutineContext for the current thread.
@@ -40,10 +41,10 @@ public abstract class CoroutineContext {
      * @param func The code to execute
      * @return The coroutine object
      */
-    public abstract Coroutine create(CoroutineFunc func);
+    public abstract <A, R> Coroutine<A, R> create(CoroutineFunc<A, R> func);
 
     /**
-     * Resumes a paused coroutine or starts a fresh one. The second argument is given as the {@link CoroutineFunc#run(CoroutineContext, Object)} second argument
+     * Resumes a paused coroutine or starts a fresh one. The second argument is given as the {@link CoroutineFunc#run(CoroutineFunc.Context, Object)} second argument
      * for fresh coroutines and is returned by yield() on paused coroutines.
      *
      * @param c   Coroutine to resume
@@ -51,7 +52,7 @@ public abstract class CoroutineContext {
      * @return The argument given to yield() by the coroutine
      * @throws CoroutineExecutionError on the main coroutine if a coroutine calls error()
      */
-    public abstract Object resume(Coroutine c, Object arg);
+    public abstract <A, R> R resume(Coroutine<A, R> c, A arg);
 
     /**
      * Yields a value and returns control to the coroutine that started the current one.
@@ -59,7 +60,7 @@ public abstract class CoroutineContext {
      * @param value Value to return on {@link #resume(Coroutine, Object)}
      * @return Value given to a subsequent resume call for the current coroutine
      */
-    public abstract Object yield(Object value);
+    public abstract <A, R> A yield(R value);
 
     /**
      * Stops execution and propagates up the coroutine resume stack until a point safe to throw exceptions is reached, then a
@@ -68,14 +69,14 @@ public abstract class CoroutineContext {
      * @param info Info to give the {@link CoroutineExecutionError} thrown
      * @return Value given to a subsequent resume call for the current coroutine
      */
-    public abstract Object error(Object info);
+    public abstract <A> A error(Object info);
 
     /**
      * Returns the current executing {@link Coroutine}
      *
      * @return The current coroutine
      */
-    public abstract Coroutine current();
+    public abstract <A, R> Coroutine<A, R> current();
 
     /**
      * Destroys a coroutine
@@ -83,7 +84,7 @@ public abstract class CoroutineContext {
      * @param c The coroutine to destroy
      * @throws IllegalStateException if the given coroutine is executing
      */
-    public abstract void destroy(Coroutine c);
+    public abstract <A, R> void destroy(Coroutine<A, R> c);
 
     /**
      * Destroys this context and all its coroutines

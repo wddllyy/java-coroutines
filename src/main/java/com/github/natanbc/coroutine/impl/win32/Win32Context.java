@@ -1,18 +1,18 @@
-package coroutine.impl.win32;
+package com.github.natanbc.coroutine.impl.win32;
 
-import coroutine.Coroutine;
-import coroutine.CoroutineContext;
-import coroutine.CoroutineExecutionError;
-import coroutine.CoroutineFunc;
-import coroutine.impl.Contexts;
-import coroutine.impl.Supplier;
+import com.github.natanbc.coroutine.Coroutine;
+import com.github.natanbc.coroutine.CoroutineContext;
+import com.github.natanbc.coroutine.CoroutineFunc;
+import com.github.natanbc.coroutine.impl.Contexts;
+import com.github.natanbc.coroutine.impl.Supplier;
+import com.github.natanbc.coroutine.CoroutineExecutionError;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Stack;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"unchecked", "WeakerAccess"})
 public class Win32Context extends CoroutineContext {
     public final Fiber mainFiber = Fiber.convertThreadToFiber();
     public final Win32Coroutine mainCoroutine = new Win32Coroutine(mainFiber);
@@ -25,7 +25,7 @@ public class Win32Context extends CoroutineContext {
     public Win32Coroutine current = mainCoroutine;
 
     @Override
-    public Coroutine create(CoroutineFunc func) {
+    public <A, R> Coroutine<A, R> create(CoroutineFunc<A, R> func) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         Win32Coroutine c = new Win32Coroutine(func, stackSize, this, new Supplier() {
             @Override
@@ -38,7 +38,7 @@ public class Win32Context extends CoroutineContext {
     }
 
     @Override
-    public Object resume(Coroutine c, Object arg) {
+    public <A, R> R resume(Coroutine<A, R> c, A arg) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         Win32Coroutine co = (Win32Coroutine) c;
         if(co.code == null) {
@@ -54,13 +54,13 @@ public class Win32Context extends CoroutineContext {
         if(ex != null) {
             Object o = ex;
             ex = null;
-            return error(o);
+            error(o);
         }
-        return buffer;
+        return (R)buffer;
     }
 
     @Override
-    public Object yield(Object value) {
+    public <A, R> A yield(R value) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         if(stack.isEmpty()) {
             throw new IllegalArgumentException("Cannot yield from main coroutine");
@@ -68,11 +68,11 @@ public class Win32Context extends CoroutineContext {
         buffer = value;
         current = stack.pop();
         current.fiber.switchTo();
-        return buffer;
+        return (A)buffer;
     }
 
     @Override
-    public Object error(Object info) {
+    public <A> A error(Object info) {
         if(Thread.currentThread() != owner) throw new IllegalStateException("Contexts are thread local");
         if(stack.isEmpty()) throw new CoroutineExecutionError(info);
         ex = info;
@@ -80,7 +80,7 @@ public class Win32Context extends CoroutineContext {
     }
 
     @Override
-    public Coroutine current() {
+    public <A, R> Coroutine<A, R> current() {
         return current;
     }
 
