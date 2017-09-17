@@ -1,6 +1,23 @@
+# Add to your project
+
+Maven:
+```xml
+<dependency>
+  <groupId>com.github.natanbc</groupId>
+  <artifactId>coroutine</artifactId>
+  <version>0.3</version>
+  <type>pom</type>
+</dependency>
+```
+
+Gradle:
+```gradle
+compile 'com.github.natanbc:coroutine:0.3'
+```
+
 # Usage - Asymmetrical
 
-First, you need an `AsymmetricCoroutineContext` object. To get one use the static method `getContext()`, which returns the appropriate implementation for the current machine.
+First, you need an `AsymmetricCoroutineContext` object. To get one use the static method `getContext()`, which returns the context for the current thread.
 
 ```java
 AsymmetricCoroutineContext ctx = AsymmetricCoroutineContext.getContext();
@@ -32,8 +49,6 @@ Additionally, you can destroy individual coroutines to free their resources
 ctx.destroy(c);
 ```
 
-Since throwing errors inside a coroutine makes the JVM crash, there's an `error(Object)` method on `CoroutineContext`. When it's called it will stop execution of all coroutines in the call stack until it's safe to throw an exception. Then, it'll throw a `CoroutineExecutionError`, giving it the object given to `error()`
-
 All `CoroutineContext` objects are meant to be used only in the thread that called `getContext()`, and *will* error if used on another thread.
 
 ## Example: Fibonacci generator
@@ -63,7 +78,7 @@ for(int i = 0; i < 10; i++) {
 
 # Usage - Symmetrical
 
-First, you need an `SymmetricCoroutineContext` object. To get one use the static method `getContext()`, which returns the appropriate implementation for the current machine.
+First, you need an `SymmetricCoroutineContext` object. To get one use the static method `getContext()`, which returns the context for the current thread.
 
 ```java
 SymmetricCoroutineContext ctx = SymmetricCoroutineContext.getContext();
@@ -94,8 +109,6 @@ Additionally, you can destroy individual coroutines to free their resources
 ```java
 ctx.destroy(c);
 ```
-
-Since throwing errors inside a coroutine makes the JVM crash, there's an `error(Object)` method on `CoroutineContext`. When it's called it will stop execution of all coroutines in the call stack until it's safe to throw an exception. Then, it'll throw a `CoroutineExecutionError`, giving it the object given to `error()`
 
 All `CoroutineContext` objects are meant to be used only in the thread that called `getContext()`, and *will* error if used on another thread.
 
