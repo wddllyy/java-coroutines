@@ -8,20 +8,20 @@ import java.util.Objects;
  * @param <A> Argument the coroutine receives when resumed
  * @param <R> Value the coroutine yields
  */
-public interface CoroutineFunc<A, R> {
+public interface AsymmetricCoroutineFunc<A, R> {
     void run(Context<A, R> ctx, A initialArg);
 
     /**
-     * Type safe alternative to {@link CoroutineContext}
+     * Type safe alternative to {@link AsymmetricCoroutineContext}
      *
      * @param <A> Argument the coroutine receives when resumed
      * @param <R> Value the coroutine yields
      */
     @SuppressWarnings({"unchecked", "unused"})
     class Context<A, R> {
-        private final CoroutineContext ctx;
+        private final AsymmetricCoroutineContext ctx;
 
-        public Context(CoroutineContext ctx) {
+        public Context(AsymmetricCoroutineContext ctx) {
             this.ctx = Objects.requireNonNull(ctx, "context");
         }
 
@@ -41,7 +41,7 @@ public interface CoroutineFunc<A, R> {
             return ctx.current();
         }
 
-        public <AA, RR> Coroutine<AA, RR> create(CoroutineFunc<AA, RR> func) {
+        public <AA, RR> Coroutine<AA, RR> create(AsymmetricCoroutineFunc<AA, RR> func) {
             return ctx.create(func);
         }
 

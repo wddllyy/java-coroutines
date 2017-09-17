@@ -3,36 +3,24 @@ package com.github.natanbc.coroutine;
 import com.github.natanbc.coroutine.impl.Contexts;
 
 /**
- * Holds the context and state of coroutines
- * <p>
- * Throws when used in a different thread than the one that created it
+ * Holds the context and state of asymmetric coroutines
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
-public abstract class CoroutineContext {
+public abstract class AsymmetricCoroutineContext {
     /**
-     * Returns the CoroutineContext for the current thread.
+     * Returns the AsymmetricCoroutineContext for the current thread.
      *
      * @return The context
      */
-    public static CoroutineContext getContext() {
-        return Contexts.get();
+    public static AsymmetricCoroutineContext getContext() {
+        return Contexts.getAsymmetric();
     }
 
     /**
-     * Use this to always get a context which does not use native code and is unable to crash the JVM
-     * On non-windows systems it's the same as {@link #getContext()}
-     *
-     * @return A fallback context implementation
-     */
-    public static CoroutineContext getFallbackContext() {
-        return Contexts.getFallback();
-    }
-
-    /**
-     * Deletes the current thread's CoroutineContext. This is a shortcut for {@code CoroutineContext.getContext().destroy();}
+     * Deletes the current thread's AsymmetricCoroutineContext. This is a shortcut for {@code AsymmetricCoroutineContext.getContext().destroy();}
      */
     public static void destroyContext() {
-        Contexts.destroy();
+        Contexts.destroyAsymmetric();
     }
 
     /**
@@ -44,10 +32,10 @@ public abstract class CoroutineContext {
      * @param <A> Argument the coroutine receives when resumed
      * @param <R> Value the coroutine yields
      */
-    public abstract <A, R> Coroutine<A, R> create(CoroutineFunc<A, R> func);
+    public abstract <A, R> Coroutine<A, R> create(AsymmetricCoroutineFunc<A, R> func);
 
     /**
-     * Resumes a paused coroutine or starts a fresh one. The second argument is given as the {@link CoroutineFunc#run(CoroutineFunc.Context, Object)} second argument
+     * Resumes a paused coroutine or starts a fresh one. The second argument is given as the {@link AsymmetricCoroutineFunc#run(AsymmetricCoroutineFunc.Context, Object)} second argument
      * for fresh coroutines and is returned by yield() on paused coroutines.
      *
      * @param c   Coroutine to resume

@@ -1,41 +1,36 @@
 package com.github.natanbc.coroutine.impl;
 
-import com.github.natanbc.coroutine.CoroutineContext;
-import com.sun.jna.Platform;
-import com.github.natanbc.coroutine.impl.fallback.FallbackContext;
-import com.github.natanbc.coroutine.impl.win32.Win32Context;
+import com.github.natanbc.coroutine.AsymmetricCoroutineContext;
+import com.github.natanbc.coroutine.SymmetricCoroutineContext;
 
-@SuppressWarnings("WeakerAccess")
 public class Contexts {
-    public static final boolean USE_FALLBACK = !Platform.isWindows() || System.getProperty("coroutine.usefallback", null) != null;
-
-    private static final ThreadLocal<CoroutineContext> contexts = new ThreadLocal<CoroutineContext>() {
+    static final ThreadLocal<AsymmetricCoroutineContext> asymmetric = new ThreadLocal<AsymmetricCoroutineContext>() {
         @Override
-        protected CoroutineContext initialValue() {
-            if(USE_FALLBACK) return new FallbackContext();
-            return new Win32Context();
+        protected AsymmetricCoroutineContext initialValue() {
+            return new AsymmetricContextImpl();
         }
     };
 
-    public static CoroutineContext get() {
-        return contexts.get();
-    }
-
-    public static void remove() {
-        contexts.remove();
-    }
-
-    public static void destroy() {
-        contexts.get().destroy();
-    }
-
-    public static CoroutineContext getFallback() {
-        CoroutineContext ctx = get();
-        if(ctx instanceof Win32Context) {
-            ctx.destroy();
-            ctx = new FallbackContext();
-            contexts.set(ctx);
+    static final ThreadLocal<SymmetricCoroutineContext> symmetric = new ThreadLocal<SymmetricCoroutineContext>() {
+        @Override
+        protected SymmetricCoroutineContext initialValue() {
+            return new SymmetricContextImpl();
         }
-        return ctx;
+    };
+
+    public static AsymmetricCoroutineContext getAsymmetric() {
+        return asymmetric.get();
+    }
+
+    public static void destroyAsymmetric() {
+        asymmetric.get().destroy();
+    }
+
+    public static SymmetricCoroutineContext getSymmetric() {
+        return symmetric.get();
+    }
+
+    public static void destroySymmetric() {
+        symmetric.get().destroy();
     }
 }

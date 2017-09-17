@@ -7,20 +7,12 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '2.0.1'
 }
 
-def versionObj = new Version(major: 0, minor: 2, revision: 1)
+def versionObj = new Version(major: 0, minor: 3)
 
 group 'com.github.natanbc'
 version "${versionObj}"
 
 sourceCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile 'net.java.dev.jna:jna:4.4.0'
-}
 
 task sourcesForRelease(type: Copy) {
     from 'src/main/java'
